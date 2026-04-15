@@ -1,0 +1,62 @@
+# Overnight experiment grid.
+#
+# Axes:
+#   architecture        x4   (mlp, simple_cnn, deeper_cnn, resnet_small)
+#   augmentation        x3   (none, affine, affine_erasing)
+#   optimizer + sched   x2   (adamw+cosine, sgd_nesterov+onecycle)
+#   regularization      x2   (light: dropout=0.2, wd=0,     ls=0.0)
+#                            (heavy: dropout=0.3, wd=5e-4,  ls=0.1)
+#
+# 4 * 3 * 2 * 2 = 48 runs. Resumable via run_sweep.py's summary.json check.
+# Override with --epochs to shorten for dry timing tests.
+
+base:
+  name: overnight
+  seed: 42
+  data:
+    batch_size: 128
+    val_split: 0.1
+    augmentation: none
+    num_workers: 0
+  model:
+    name: mlp
+    kwargs:
+      dropout: 0.2
+  optimizer:
+    name: adamw
+    lr: 0.001
+    weight_decay: 0.0
+  scheduler:
+    name: cosine
+    kwargs:
+      t_max: 15
+  training:
+    epochs: 15
+    label_smoothing: 0.0
+    early_stopping_patience: 0
+
+grid:
+  model.name: [mlp, simple_cnn, deeper_cnn, resnet_small]
+  data.augmentation: [none, affine, affine_erasing]
+  # Optimizer + scheduler pairs are encoded as two independent axes that
+  # together describe the same 2 presets; use `exclude:` below to collapse
+  # the cross-product back down to the intended 2 combos.
+  optimizer.name: [adamw, sgd]
+  scheduler.name: [cosine, onecycle]
+  # Regularization preset axis: light vs heavy.
+  model.kwargs.dropout: [0.2, 0.3]
+  optimizer.weight_decay: [0.0, 0.0005]
+  training.label_smoothing: [0.0, 0.1]
+
+exclude:
+  # Keep only (adamw + cosine) and (sgd + onecycle).
+  - {optimizer.name: adamw, scheduler.name: onecycle}
+  - {optimizer.name: sgd, scheduler.name: cosine}
+  # Tie regularization knobs together: light = (0.2, 0.0, 0.0), heavy = (0.3, 5e-4, 0.1).
+  # Drop all other combinations.
+  - {model.kwargs.dropout: 0.2, optimizer.weight_decay: 0.0005}
+  - {model.kwargs.dropout: 0.2, training.label_smoothing: 0.1}
+  - {model.kwargs.dropout: 0.3, optimizer.weight_decay: 0.0}
+  - {model.kwargs.dropout: 0.3, training.label_smoothing: 0.0}
+  - {optimizer.weight_decay: 0.0, training.label_smoothing: 0.1}
+  - {optimizer.weight_decay: 0.0005, training.label_smoothing: 0.0}

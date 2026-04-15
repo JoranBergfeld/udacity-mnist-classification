@@ -1,0 +1,26 @@
+name: resnet_small
+seed: 42
+data:
+  batch_size: 128
+  val_split: 0.1
+  augmentation: affine
+  num_workers: 0
+model:
+  name: resnet_small
+  kwargs:
+    base_channels: 32
+    dropout: 0.2
+optimizer:
+  name: sgd
+  lr: 0.05
+  momentum: 0.9
+  nesterov: true
+  weight_decay: 0.0005
+scheduler:
+  name: onecycle
+  kwargs:
+    max_lr: 0.1
+training:
+  epochs: 15
+  label_smoothing: 0.0
+  early_stopping_patience: 0
