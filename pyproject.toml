@@ -12,6 +12,7 @@ dependencies = [
     "pandas>=2.1",
     "tqdm>=4.66",
     "tabulate>=0.10.0",
+    "onnx>=1.16",
 ]
 
 [project.optional-dependencies]

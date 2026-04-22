@@ -21,6 +21,28 @@ def save_model(model, name, save_dir=DEFAULT_MODELS_DIR):
     return path
 
 
+def save_model_onnx(model, name, save_dir=DEFAULT_MODELS_DIR, device=None):
+    """Export to ONNX for cross-runtime hosting (e.g. Java via onnxruntime)."""
+    os.makedirs(save_dir, exist_ok=True)
+    path = os.path.join(str(save_dir), f"{name}.onnx")
+    was_training = model.training
+    model.eval()
+    dummy = torch.randn(1, 1, 28, 28, device=device if device is not None else next(model.parameters()).device)
+    torch.onnx.export(
+        model,
+        dummy,
+        path,
+        input_names=["input"],
+        output_names=["log_softmax"],
+        dynamic_axes={"input": {0: "batch"}, "log_softmax": {0: "batch"}},
+        opset_version=17,
+    )
+    if was_training:
+        model.train()
+    print(f"  ONNX saved to {path}")
+    return path
+
+
 def load_model(model_class, path, **kwargs):
     model = model_class(**kwargs)
     model.load_state_dict(torch.load(path, weights_only=True))

@@ -51,6 +51,7 @@ from .save import (
     DEFAULT_RESULTS_DIR,
     load_all_results,
     save_model,
+    save_model_onnx,
     save_run_metrics,
 )
 from .train import TrainHistory, get_device, train_model
@@ -260,6 +261,7 @@ def run_single(
           + ", ".join(f"{name}:{m['f1']:.3f}" for name, m in top_errors))
 
     save_model(model, run_name, save_dir=models_dir)
+    save_model_onnx(model, run_name, save_dir=models_dir, device=device)
 
     config_dump = config_to_dict(cfg)
     config_dump["parameters"] = parameter_count
